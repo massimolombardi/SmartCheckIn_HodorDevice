@@ -88,5 +88,5 @@ void WiFiCredential::saveToFile() {
 
 
 void WiFiCredential::removeCredential() {
-  FileHandler::removeFile(CREDENTIAL_FILENAME);
+  FileHandler::deleteFile(CREDENTIAL_FILENAME);
 }
