@@ -12,9 +12,9 @@
  */
 
 #include <WiFi.h>
+#include "Configuration.h"
 #include "WiFiCredential.h"
 #include "ConnectionManager.h"
-
 
 /*
  * Costruttore
@@ -49,7 +49,7 @@ WIFI_CONNECTION_STATUS ConnectionManager::MakeConnection() {
       return WIFI_CONNECTED;
     }      
     else {
-      Serial.println("Tentativo di connessione " + String(i) + " fallito");
+      Serial.println("Tentativo di connessione " + String(i+1) + " fallito");
       delay(WIFI_MULTI_CONNECT_WAITING_MS);
     }
   }
@@ -85,6 +85,10 @@ void ConnectionManager::startConfigAP() {
   else
     Serial.println("No stored Credentials. No timeout");
 
+  //Inizializzazione dei parametri aggiuntivi di configurazione
+  Configuration cfg;
+  cfg.initForConfigAP(wifiManager);
+  
   //Avvio dell'AP di configurazione
   if(!wifiManager.startConfigPortal(CONFIGURATION_AP_NAME, CONFIGURATION_AP_PASSWORD))
     Serial.println("Connessione fallita");
