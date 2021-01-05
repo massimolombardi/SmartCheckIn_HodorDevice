@@ -7,7 +7,7 @@
  * 
  *   Versione   Autore      Data       Commenti
  *   --------- -----------  ---------- -----------
- *   1.0       M. Lombardi  13/12/2020 Introdotta gestione connessioni con ESPAsync_WiFiManager (https://github.com/khoih-prog/ESP_WiFiManager)
+ *   1.0       M. Lombardi  13/12/2020 Introdotta gestione connessioni con ESPAsync_WiFiManager (https://github.com/khoih-prog/ESPAsync_WiFiManager)
  *
  */
 
