@@ -3,13 +3,15 @@
  * @Since: 07/11/2020
  * @Project: Smart Check-In: Hodor
  * 
- * @Brief: Implementazione della classe Singleton per la gestione del File System.
- *          sulla libreria FS.h
+ * @Brief: Classe Singleton per la gestione del File System attraverso la libreria LittleFS per ESP32. 
+ *         Questa classe va inclusa per prima altrimenti l'applicativo crasha per colpa di un problema sulla libreria FS.h
+ *         La classe si occupa di astrarre ulteriormente l'utilizzo del File System, rendendo più sicuro l'accesso all'oggetto
+ *         File System esposto da LittleFS. La libreria NON include alcun meccanismo di Thread-Safety.
  * 
  *   Versione   Autore      Data       Commenti
  *   --------- -----------  ---------- -----------
  *   1.0       M. Lombardi  13/12/2020 Creazione
- *   1.1       M. Lombardi  21/12/2020 INtrodotta lettura/scrittura di JSON da file
+ *   1.1       M. Lombardi  21/12/2020 Introdotta lettura/scrittura di JSON da file
  *   
  */
 
@@ -17,13 +19,21 @@
 
 FS* FileHandler::filesystem = NULL;
 
-//Ritorna il puntatore all'oggetto 
 FS* FileHandler::getInstance() {          
+  
   if(filesystem == NULL) {              
+    
     filesystem = &LITTLEFS;                 
+    
     if(!FileFS.begin(true)) {
-      Serial.println(F("Mount del FyleSystem fallito. Formattazione necessaria"));
+
+      Serial.println(F("Mount del File System fallito. Formattazione necessaria"));
+
+      #if AUTO_FORMAT_ON_MOUNT_FAILED
+      formatFilesystem();
+      #endif
     }
+
   }                            
   return filesystem;
 }
@@ -31,15 +41,14 @@ FS* FileHandler::getInstance() {
 
 bool FileHandler::writeJson(String fileName, DynamicJsonDocument* jsonObject) {
 
-  if(fileName == "") {
+  if(fileName == NULL || fileName == "") {
     Serial.println("Il file richiesto non è valido");
     return false;
   }
   
-  File file = getInstance()->open(fileName, "w");
-  
+  File file = getInstance()->open(fileName, "w");  
   if(!file) {
-    Serial.println("Errore nell'apertura del file in scrittura: " + fileName);
+    Serial.println("Errore nell'apertura in scrittura del file: " + fileName);
     return false;
   }
 
@@ -50,20 +59,20 @@ bool FileHandler::writeJson(String fileName, DynamicJsonDocument* jsonObject) {
 
 bool FileHandler::loadJson(String fileName, DynamicJsonDocument* jsonObject) {
 
-  if(fileName == "") {
+  if(fileName == NULL || fileName == "") {
     Serial.println("Il file richiesto non è valido");
     return false;
   }
 
   File file = getInstance()->open(fileName, "r");
   if(!file) {
-    Serial.println("Errore nell'apertura del file in lettura: " + fileName);
+    Serial.println("Errore nell'apertura in lettura del file: " + fileName);
     return false;
   }
 
   size_t size = file.size();
-  if(size > 1024) {
-    Serial.println("Errore in file specificato è troppo grande");
+  if(size > MAX_FILE_SIZE) {
+    Serial.println("Il file che si richiede di aprire è troppo grande");
     return false;
   }
 
@@ -72,7 +81,7 @@ bool FileHandler::loadJson(String fileName, DynamicJsonDocument* jsonObject) {
 
   auto error = deserializeJson(*jsonObject, buf.get());
   if(error) {
-    Serial.println("Errore durante il parsing del file letto: " + fileName);
+    Serial.println("Errore durante il parsing del JSON letto dal file: " + fileName);
     return false;
   }
 
@@ -80,21 +89,21 @@ bool FileHandler::loadJson(String fileName, DynamicJsonDocument* jsonObject) {
 }
 
 
-bool FileHandler::removeFile(String fileName) {
+bool FileHandler::deleteFile(String fileName) {
 
-  if(fileName == "") {
+  if(fileName == NULL || fileName == "") {
     Serial.println("Il file richiesto non è valido");
     return false;
   }
 
   getInstance()->remove(fileName);
   return true;
-  
 }
 
 
 void FileHandler::formatFilesystem() {
-    Serial.println(F("Reset della configurazione in corso..."));
+    Serial.println(F("Formattazione File System in corso..."));
     FileFS.format();
+    Serial.println(F("Formattazione completata, riavvio il dispositivo"));
     ESP.restart();
 }
