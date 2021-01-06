@@ -65,9 +65,6 @@ void ConnectionManager::startConfigAP() {
   
   Serial.println("Avvio del portale di configurazione");
 
-  //Notifica apertura portale con il led accesso
-  digitalWrite(CONFIGURATION_LED, HIGH);
-
   ESPAsync_WiFiManager wifiManager(webServer, &dnsServer, "ConfigOnSwitch");
 
   //Soglia di qualità delle reti e selezione automatica del canale dell'AP
@@ -88,6 +85,9 @@ void ConnectionManager::startConfigAP() {
   //Inizializzazione dei parametri aggiuntivi di configurazione
   Configuration cfg;
   cfg.initForConfigAP(wifiManager);
+
+  //Notifica apertura portale con il led accesso
+  digitalWrite(CONFIGURATION_LED, HIGH);
   
   //Avvio dell'AP di configurazione
   if(!wifiManager.startConfigPortal(CONFIGURATION_AP_NAME, CONFIGURATION_AP_PASSWORD))
@@ -98,21 +98,17 @@ void ConnectionManager::startConfigAP() {
 
   if(String(wifiManager.getSSID(0)) != "") {
 
-    WiFiCredential WFConfig[NUM_WIFI_CREDENTIALS];
-
     //Reset delle precedenti impostazioni
-    memset(&WFConfig, 0, sizeof(WFConfig));
-    for(uint8_t i = 0; i < NUM_WIFI_CREDENTIALS; i++) {
+    memset(&credenziali, 0, sizeof(credenziali));
     
-      if(WFConfig[i].storeCredential(wifiManager.getSSID(i), wifiManager.getPW(i))) {
-        Serial.println("Credenziali salvate per " + wifiManager.getSSID(i));
-        wifiHandler.addAP(WFConfig[i].getSSID(), WFConfig[i].getPassword());
-        WFConfig[i].saveToFile();
-      }
-      else {
-        Serial.println("SSID o Password non validi per " + wifiManager.getSSID(i));
-      }
-    }    
+    if(credenziali.storeCredential(wifiManager.getSSID(), wifiManager.getPW())) {
+      Serial.println("Credenziali salvate per " + wifiManager.getSSID());
+      wifiHandler.addAP(credenziali.getSSID(), credenziali.getPassword());
+      credenziali.saveToFile();
+    }
+    else {
+      Serial.println("SSID o Password non validi.");
+    }
   }
   else {
     Serial.println("Credenziali ricevute vuote");
@@ -151,19 +147,13 @@ void ConnectionManager::dumpConnectionStatus() {
 
 void ConnectionManager::loadConnectionParams() {
 
-  WiFiCredential WFConfig[NUM_WIFI_CREDENTIALS];
+  credenziali.loadFromFile();
   
-  for(uint8_t i = 0; i < NUM_WIFI_CREDENTIALS; i++) {
-    
-    WFConfig[i].loadFromFile();
-    
-    if(WFConfig[i].isValidCredential()) {
-      Serial.println("Credenziali caricate per " + WFConfig[i].getStringSSID());
-      wifiHandler.addAP(WFConfig[i].getSSID(), WFConfig[i].getPassword());
-    }
-    else {
-      Serial.println("SSID o Password non validi per " + WFConfig[i].getStringSSID());
-    }
-  } 
-  
+  if(credenziali.isValidCredential()) {
+    Serial.println("Credenziali caricate per " + credenziali.getStringSSID());
+    wifiHandler.addAP(credenziali.getSSID(), credenziali.getPassword());
+  }
+  else {
+    Serial.println("SSID o Password non validi");
+  }
 }

@@ -32,6 +32,8 @@ EasyButton button(12);
 void onPressedForDuration() {
     Serial.println("Button has been pressed for the given duration!");
     FileHandler::deleteFile("/wifi_cred.dat");
+    WiFi.disconnect(false,true);
+    delay(3000);
     ESP.restart();
 }
 
@@ -77,13 +79,13 @@ void loop() {
 
     if((int)(millis() - startedAt_ms)/1000 % 4 == 0)
       cm.dumpConnectionStatus();
-
+/*
     if((int)(millis() - startedAt_ms)/1000 % 2 == 0) {
       RestClient rc;
       rc.testAPI();
     }
 
-    if((int)(millis() - startedAt_ms)/1000 % 10 == 0) {
+    if((int)(millis() - startedAt_ms)/1000 % 1000 == 0) {
 
         t_httpUpdate_return ret = ESPhttpUpdate.update("http://192.168.1.18/firmware.bin");
 
@@ -104,6 +106,6 @@ void loop() {
                 Serial.println("Test");
                 break;
         }
-    }    
+    } */   
   }
 }

@@ -18,7 +18,6 @@
 
 #define ESP_WIFIMANAGER_VERSION "1.3.0"
 
-#define NUM_WIFI_CREDENTIALS 1
 #define WIFI_MAX_CONNECTION_RETRY 10
 #define WIFI_MULTI_CONNECT_WAITING_MS 100L
 #define WIFI_MULTI_1ST_CONNECT_WAITING_MS 0
@@ -48,6 +47,9 @@ class ConnectionManager {
   
     //Web server per l'AP di configurazione
     AsyncWebServer* webServer;
+
+    //Oggetto contenente le Credenziali
+    WiFiCredential credenziali;
 
     void loadConnectionParams();
 
