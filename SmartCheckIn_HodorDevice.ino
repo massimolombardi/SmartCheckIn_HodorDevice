@@ -8,104 +8,163 @@
  *   Versione   Autore      Data       Commenti
  *   --------- -----------  ---------- -----------
  *   1.0       M. Lombardi  13/12/2020 Introdotta gestione connessioni con ESPAsync_WiFiManager
+ *   1.1	   M. Lombardi  09/01/2021 Introdotta gestione dei Tasks con Scheduler
  * 
  */
-#include "WiFiCredential.h"
-#include "ConnectionManager.h"
 #include <EasyButton.h>
-#include "FileHandler.h"
-#include "RestClient.h"
+#include <TaskScheduler.h>
 #include <ESP32httpUpdate.h>
 
-#define FIRMWARE_VERSION "0.0.2"
+#include "RestClient.h"
+#include "ConnectionManager.h"
+#include "src/Configuration.h"
+#include "src/FileSystem/FileHandler.h"
+
+#define FIRMWARE_VERSION "0.0.3"
+
+#define ACTION_BUTTON_PIN 15
+#define WIFI_RESET_PRESS_DURATION 5
+#define FACTORY_RESET_PRESS_DURATION 15
+
+
+/*********************************** Firme delle Funzioni ***********************************/
+
+//Tasks
+void restClient();
+void printStatus();
+void buttonReader();
+void firmwareUpdater();
+void checkConnectionStatus();
+
+//Callback Pulsante
+void factoryReset();
+void resetWiFiConfiguration();
+
+
+
+/*********************************** Variabili di Supporto ***********************************/
 
 unsigned long startedAt_ms = 0;
-ConnectionManager cm = ConnectionManager();
 
-// Duration.
-int duration = 2000;
+//Bottone per azioni utente
+EasyButton button(ACTION_BUTTON_PIN);
 
-// Button.
-EasyButton button(12);
+//Oggetto per la gestione dei parametri di configurazione
+Configuration cfg;
 
-// Callback.
-void onPressedForDuration() {
-    Serial.println("Button has been pressed for the given duration!");
-    FileHandler::deleteFile("/wifi_cred.dat");
-    WiFi.disconnect(false,true);
-    delay(3000);
-    ESP.restart();
-}
+//Oggetto per la gestione della connessione
+ConnectionManager cm = ConnectionManager(&cfg);
+
+//Scheduler e Tasks
+Scheduler scheduler;
+Task printStatusTask(5000, TASK_FOREVER, &printStatus);
+Task buttonReaderTask(0, TASK_FOREVER, &buttonReader);
+Task checkConnectionStatusTask(1000, TASK_FOREVER, &checkConnectionStatus);
+
 
 void setup() {
 
-  //Configurazione della comunicazione su porta seriale
-  Serial.begin(115200);
-  while(!Serial);
+	//Configurazione della comunicazione su porta seriale
+	Serial.begin(115200);
+	while(!Serial);
 
-  Serial.println("Avvio del device in corso su " + String(ARDUINO_BOARD));
-  //Serial.println("ESP_WiFiManager Version " + String(ESP_WIFIMANAGER_VERSION));
-  //Serial.println("ESP_DoubleResetDetector Version " + String(ESP_DOUBLE_RESET_DETECTOR_VERSION));
+	startedAt_ms = millis();
 
-  Serial.setDebugOutput(false);
+	Serial.println("Avvio del device in corso su " + String(ARDUINO_BOARD));
+	Serial.println("Firmware Version: " + String(FIRMWARE_VERSION));
+	Serial.println("ESP_AsyncWiFiManager Version: " + String(ESP_WIFIMANAGER_VERSION));
 
-  // Initialize the button.
-  button.begin();
-  
-  // Attach callback.
-  button.onPressedFor(duration, onPressedForDuration);
+	Serial.setDebugOutput(false);
 
-  Serial.println(FIRMWARE_VERSION);
-  startedAt_ms = millis();
+	//Inizializzazione del bottone ed impostazione Callbacks
+	button.begin();
+	button.onPressedFor(WIFI_RESET_PRESS_DURATION, resetWiFiConfiguration);
+	//button.onPressedFor(FACTORY_RESET_PRESS_DURATION, factoryReset);
+
+	//Inizializzazione dei Tasks
+	scheduler.addTask(printStatusTask);
+	scheduler.addTask(buttonReaderTask);
+	scheduler.addTask(checkConnectionStatusTask);
+
+	//Avvio dei Tasks
+	printStatusTask.enable();
+	buttonReaderTask.enable();
+	checkConnectionStatusTask.enable();
 }
 
 
 void loop() {
+  scheduler.execute();
+}
 
-  
-  if(!cm.isConnectionActive()) {
 
-    //Tentativo di connessione
-    if(cm.MakeConnection() == WIFI_DISCONNECTED) {    
-      
-      //Se non riesco a connettermi apro l'AP config
-      cm.startConfigAP();
-    }
-  
-  }
-  else {
-    
-    button.read();
+void resetWiFiConfiguration() {
+    Serial.println("Ricevuto comando di reset parametri di rete");
+    cm.disconnect();
+    cfg.resetWiFiCredential();
+    ESP.restart();
+}
 
-    if((int)(millis() - startedAt_ms)/1000 % 4 == 0)
-      cm.dumpConnectionStatus();
-/*
-    if((int)(millis() - startedAt_ms)/1000 % 2 == 0) {
-      RestClient rc;
-      rc.testAPI();
-    }
 
-    if((int)(millis() - startedAt_ms)/1000 % 1000 == 0) {
+void factoryReset() {
+  Serial.println("Ricevuto comando di factory reset");
+  cm.disconnect();
+  cfg.factoryReset();
+}
 
-        t_httpUpdate_return ret = ESPhttpUpdate.update("http://192.168.1.18/firmware.bin");
 
-        switch(ret) {
-            case HTTP_UPDATE_FAILED:
-                Serial.printf("HTTP_UPDATE_FAILD Error (%d): %s", ESPhttpUpdate.getLastError(), ESPhttpUpdate.getLastErrorString().c_str());
-                break;
+void checkConnectionStatus() {
+	if(!cm.isConnectionActive()) {
+		Serial.println("Tentativo di ristabilire la connessione");
+		//Tentativo di connessione
+		if(cm.MakeConnection() == WIFI_DISCONNECTED) {
+		//Se non riesco a connettermi apro l'AP config
+		cm.startConfigAP();
+		}
+	}
+}
 
-            case HTTP_UPDATE_NO_UPDATES:
-                Serial.println("HTTP_UPDATE_NO_UPDATES");
-                break;
 
-            case HTTP_UPDATE_OK:
-                Serial.println("HTTP_UPDATE_OK");
-                break;
+void buttonReader() {
+	button.read();
+}
 
-            default:
-                Serial.println("Test");
-                break;
-        }
-    } */   
-  }
+
+void printStatus() {
+	cm.dumpConnectionStatus();
+}
+
+
+void restClient() {
+	if(cm.isConnectionActive()) {
+		RestClient rc;
+		rc.testAPI();
+	}
+}
+
+
+void firmwareUpdater() {
+
+	if(cm.isConnectionActive()) {
+
+		t_httpUpdate_return ret = ESPhttpUpdate.update("http://192.168.1.18/firmware.bin");
+
+		switch(ret) {
+			case HTTP_UPDATE_FAILED:
+				Serial.printf("HTTP_UPDATE_FAILD Error (%d): %s", ESPhttpUpdate.getLastError(), ESPhttpUpdate.getLastErrorString().c_str());
+				break;
+
+			case HTTP_UPDATE_NO_UPDATES:
+				Serial.println("HTTP_UPDATE_NO_UPDATES");
+				break;
+
+			case HTTP_UPDATE_OK:
+				Serial.println("HTTP_UPDATE_OK");
+				break;
+
+			default:
+				Serial.println("Test");
+				break;
+		}
+	}
 }

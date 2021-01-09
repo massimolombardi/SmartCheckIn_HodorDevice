@@ -10,23 +10,31 @@
  *   Versione   Autore      Data       Commenti
  *   --------- -----------  ---------- -----------
  *   1.0       M. Lombardi  13/12/2020 Creazione
- * 
+ *   1.1       M. Lombardi  09/01/2021 Migliorata gestione dell'AP di configurazione
+ *                                     Migliorata gestione della memorizzazione credenziali
  */
 
 #include <WiFiMulti.h>
 #include <ESPAsync_WiFiManager.h>              
+#include "src/Configuration.h"
 
 #define ESP_WIFIMANAGER_VERSION "1.3.0"
 
-#define WIFI_MAX_CONNECTION_RETRY 10
-#define WIFI_MULTI_CONNECT_WAITING_MS 100L
-#define WIFI_MULTI_1ST_CONNECT_WAITING_MS 0
+//Parametri di configurazione connessione
+#define WIFI_MAX_CONNECTION_RETRY 5
+#define WIFI_WAIT_BETWEEN_CONNECT_MS 1000
+#define WIFI_WAIT_BEFORE_1ST_CONNECT_MS 0
 
+//Parametri di configurazione segnalazione errori
+#define BLINKS_NUM_ON_INVALID_CREDENTIAL 5
+#define WAIT_BETWEEN_BLINKS 500
+
+//Parametri portale di configurazione
+#define DEVICE_NAME "SmartCheckIn_Hodor"
+#define CONFIGURATION_LED 4
+#define HTTP_CONFIGURATION_PORT 80
 #define CONFIGURATION_AP_NAME "SmartCheckIn - Config"
 #define CONFIGURATION_AP_PASSWORD "smartcheckin"
-
-#define HTTP_CONFIGURATION_PORT 80
-#define CONFIGURATION_LED 4
 
 
 enum WIFI_CONNECTION_STATUS {
@@ -48,20 +56,21 @@ class ConnectionManager {
     //Web server per l'AP di configurazione
     AsyncWebServer* webServer;
 
-    //Oggetto contenente le Credenziali
-    WiFiCredential credenziali;
+    //Putantore all'Oggetto Configurazione
+    Configuration* cfg;
 
-    void loadConnectionParams();
+    void notifyErrorWithLed(int numOfBlink);
+    bool loadConnectionParams();
+
 
   public:
-    ConnectionManager();
+    ConnectionManager(Configuration* configuration);
     
+    void startConfigAP();    
     WIFI_CONNECTION_STATUS MakeConnection();
     
-    void startConfigAP();
-    
-    bool isConnectionActive();
-    
+    void disconnect();   
+    bool isConnectionActive(); 
     void dumpConnectionStatus();
   
 };

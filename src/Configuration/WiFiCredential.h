@@ -14,35 +14,38 @@
  */
 
 #include <WString.h>
+#include <ArduinoJson.h>
 
+#define SSID_MIN_LEN 1
 #define SSID_MAX_LEN 32
 #define PASSWORD_MIX_LEN 8
 #define PASSWORD_MAX_LEN 64
 #define BUFFER_MAX_LEN (int)(SSID_MAX_LEN + PASSWORD_MAX_LEN)
 
-#define CREDENTIAL_FILENAME F("/wifi_cred.dat")
-
 
 class WiFiCredential {
 
-    private:    
+    private:        
         char ssid[SSID_MAX_LEN];
         char password[PASSWORD_MAX_LEN];
 
 
-    public:        
-        String getStringSSID() { return String(ssid); }    
-        String getStringPassword() { return String(password); }
-        
+    public:  
+        WiFiCredential();
+        WiFiCredential(String id, String psw);
+        WiFiCredential(DynamicJsonDocument& doc);
+
         char* getSSID() { return ssid; }        
         char* getPassword() { return password; }
+        String getStringSSID() { return String(ssid); }    
+        String getStringPassword() { return String(password); }
 
-        bool isValidCredential();
-        bool storeCredential(String SSID, String psw);
+        bool isValid();        
+        bool isValid(String SSID, String psw);
 
-        void loadFromFile();
-        void saveToFile();
-        void removeCredential();
+        String toString();
+        DynamicJsonDocument toJSON();
+
 };
 
 #endif
