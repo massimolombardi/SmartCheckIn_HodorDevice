@@ -72,6 +72,17 @@ class FileHandler {
          */ 
         static bool deleteFile(String fileName);
 
+
+        /**
+         * Metodo statico per il controllo di esistenza di un file da File System.
+         * 
+         * @Param fileName contiene il nome del file cercato
+         * 
+         * @Return true se il file esiste, false altrimenti
+         */ 
+        static bool fileExists(String fileName);
+
+
         /**
          * Metodo statico per la formattazione del File System.
          * Questo metodo deve essere invocato in caso si voglia effettuare una formattazione completa del File System

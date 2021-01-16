@@ -100,6 +100,16 @@ bool FileHandler::deleteFile(String fileName) {
   return true;
 }
 
+bool FileHandler::fileExists(String fileName) {
+
+  if(fileName == NULL || fileName == "") {
+    Serial.println("Il file richiesto non è valido");
+    return false;
+  }
+
+  return getInstance()->exists(fileName);
+}
+
 
 void FileHandler::formatFilesystem() {
     Serial.println(F("Formattazione File System in corso..."));

@@ -15,10 +15,10 @@
  */
 
 #include <ESPAsync_WiFiManager.h>
-
-#include "Configuration/BaseApiUrl.h"
-#include "Configuration/CheckOpenDelay.h"
+//#include "Configuration/BaseApiUrl.h"
+//#include "Configuration/CheckOpenDelay.h"
 #include "Configuration/WiFiCredential.h"
+#include "Configuration/LoginCredential.h"
 
 #define CREDENTIAL_FILENAME F("/wifi.json")
 #define CONFIGURATION_FILENAME F("/config.json")
@@ -28,9 +28,10 @@
 class Configuration {
 
     private:
-        BaseApiUrl apiUrl;
-        CheckOpenDelay checkOpenDelay;
+        //BaseApiUrl apiUrl;
+        //CheckOpenDelay checkOpenDelay;
         WiFiCredential wifiCredential;
+        LoginCredential loginCredential;
 
 
     public:
@@ -47,12 +48,25 @@ class Configuration {
         char* getWiFiSSID();
         char* getWiFiPassword();
 
+
+        /**
+         * Funzioni per la gestione delle impostazioni di Login
+         */ 
+        bool loadLoginCredential();
+        void resetLoginCredential();
+        bool saveLoginCredential();
+        String getLoginUsername();
+        String getLoginPassword();
+
         void factoryReset();
 
         String getAPIBaseUrl();
         String getUsername();
         String getPassword();
         int getCheckOpenDelay();
+
+        bool initialize();
+        bool save(ESPAsync_WiFiManager& wifiManager);
 
 };
 

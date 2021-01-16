@@ -9,9 +9,10 @@
  *   --------- -----------  ---------- -----------
  *   1.0       M. Lombardi  13/12/2020 Introdotta gestione connessioni con ESPAsync_WiFiManager
  *   1.1	   M. Lombardi  09/01/2021 Introdotta gestione dei Tasks con Scheduler
- * 
+ *   1.2	   M. Lombardi  10/01/2021 Introdotta gestione azioni multiple pulsante
+ *  
  */
-#include <EasyButton.h>
+
 #include <TaskScheduler.h>
 #include <ESP32httpUpdate.h>
 
@@ -20,11 +21,12 @@
 #include "src/Configuration.h"
 #include "src/FileSystem/FileHandler.h"
 
-#define FIRMWARE_VERSION "0.0.3"
+#define FIRMWARE_VERSION "0.0.4"
 
 #define ACTION_BUTTON_PIN 15
-#define WIFI_RESET_PRESS_DURATION 5
-#define FACTORY_RESET_PRESS_DURATION 15
+#define LOGIN_RESET_PRESS_DURATION_MS 5000
+#define WIFI_RESET_PRESS_DURATION_MS 10000
+#define FACTORY_RESET_PRESS_DURATION_MS 20000
 
 
 /*********************************** Firme delle Funzioni ***********************************/
@@ -36,18 +38,15 @@ void buttonReader();
 void firmwareUpdater();
 void checkConnectionStatus();
 
-//Callback Pulsante
+//Callbacks Pulsante
 void factoryReset();
 void resetWiFiConfiguration();
-
+void resetLoginConfiguration();
 
 
 /*********************************** Variabili di Supporto ***********************************/
 
 unsigned long startedAt_ms = 0;
-
-//Bottone per azioni utente
-EasyButton button(ACTION_BUTTON_PIN);
 
 //Oggetto per la gestione dei parametri di configurazione
 Configuration cfg;
@@ -60,7 +59,7 @@ Scheduler scheduler;
 Task printStatusTask(5000, TASK_FOREVER, &printStatus);
 Task buttonReaderTask(0, TASK_FOREVER, &buttonReader);
 Task checkConnectionStatusTask(1000, TASK_FOREVER, &checkConnectionStatus);
-
+Task restClientTask(5000, TASK_FOREVER, &restClient);
 
 void setup() {
 
@@ -76,20 +75,24 @@ void setup() {
 
 	Serial.setDebugOutput(false);
 
-	//Inizializzazione del bottone ed impostazione Callbacks
-	button.begin();
-	button.onPressedFor(WIFI_RESET_PRESS_DURATION, resetWiFiConfiguration);
-	//button.onPressedFor(FACTORY_RESET_PRESS_DURATION, factoryReset);
+	//Inizializzazione del bottone di azioni utente
+	pinMode(ACTION_BUTTON_PIN, INPUT_PULLUP); 
+
+	//Caricamento della configurazione. In caso di errore faccio partire l'AP
+	if(!cfg.initialize()) 
+		cm.startConfigAP();
 
 	//Inizializzazione dei Tasks
 	scheduler.addTask(printStatusTask);
 	scheduler.addTask(buttonReaderTask);
 	scheduler.addTask(checkConnectionStatusTask);
+	scheduler.addTask(restClientTask);
 
 	//Avvio dei Tasks
 	printStatusTask.enable();
 	buttonReaderTask.enable();
 	checkConnectionStatusTask.enable();
+	restClientTask.enable();
 }
 
 
@@ -102,6 +105,13 @@ void resetWiFiConfiguration() {
     Serial.println("Ricevuto comando di reset parametri di rete");
     cm.disconnect();
     cfg.resetWiFiCredential();
+    ESP.restart();
+}
+
+
+void resetLoginConfiguration() {
+    Serial.println("Ricevuto comando di reset parametri di Login");
+    cfg.resetLoginCredential();
     ESP.restart();
 }
 
@@ -126,7 +136,29 @@ void checkConnectionStatus() {
 
 
 void buttonReader() {
-	button.read();
+
+	static int duration = 0;
+
+	while(digitalRead(ACTION_BUTTON_PIN) == LOW) {
+		delay(50);
+		duration += 50;
+	}
+	
+	if(duration >= FACTORY_RESET_PRESS_DURATION_MS) {  
+		factoryReset();
+		duration = 0;
+  	}
+	else if(duration >= WIFI_RESET_PRESS_DURATION_MS) {
+		resetWiFiConfiguration();
+		duration = 0;
+	}
+	else if(duration >= LOGIN_RESET_PRESS_DURATION_MS) {
+		resetLoginConfiguration();
+		duration = 0;
+	}
+	else {
+		duration = 0;
+	}
 }
 
 
@@ -138,7 +170,8 @@ void printStatus() {
 void restClient() {
 	if(cm.isConnectionActive()) {
 		RestClient rc;
-		rc.testAPI();
+		rc.getToken();
+		//Serial.println(cfg.getLoginUsername() + " " + cfg.getLoginPassword()); 
 	}
 }
 

@@ -25,10 +25,12 @@ ConnectionManager::ConnectionManager(Configuration* configuration) {
 
 WIFI_CONNECTION_STATUS ConnectionManager::MakeConnection() {
 
-	if(!loadConnectionParams()) {
-		Serial.println("Impossibile connettersi con credenziali non valide");  
-		return WIFI_DISCONNECTED;
-	}
+	//if(!loadConnectionParams()) {
+	//	Serial.println("Impossibile connettersi con credenziali non valide");  
+	//	return WIFI_DISCONNECTED;
+	//}
+	//Caricamento della configurazione all'interno del WiFi Handler
+	wifiHandler.addAP(cfg->getWiFiSSID(), cfg->getWiFiPassword());
 
 	WiFi.mode(WIFI_STA);
 	uint8_t connectionStatus = WL_DISCONNECTED;
@@ -68,7 +70,7 @@ void ConnectionManager::startConfigAP() {
 	wifiManager.setConfigPortalChannel(0);
 
 	//Inizializzazione dei parametri aggiuntivi di configurazione
-	cfg->initForConfigAP(wifiManager);
+	//cfg->initForConfigAP(wifiManager);
 
 	//Notifica apertura portale con il led accesso
 	digitalWrite(CONFIGURATION_LED, HIGH);
@@ -80,6 +82,7 @@ void ConnectionManager::startConfigAP() {
 		Serial.println("Configurazione Completata. Avvio del device con i nuovi parametri");
 	}
 
+/*
 	if(cfg->saveWiFiCredential(wifiManager.getSSID(), wifiManager.getPW())) {
 		Serial.println("Credenziali salvate per " + wifiManager.getSSID());
 		wifiHandler.addAP(cfg->getWiFiSSID(), cfg->getWiFiPassword());
@@ -89,6 +92,19 @@ void ConnectionManager::startConfigAP() {
 		notifyErrorWithLed(BLINKS_NUM_ON_INVALID_CREDENTIAL);
 		Serial.println("SSID o Password non validi");
 	}
+*/
+
+	if(cfg->save(wifiManager)) {
+		Serial.println("Configurazione salvata con successo");
+		wifiHandler.addAP(cfg->getWiFiSSID(), cfg->getWiFiPassword());
+		Serial.println("Credenziali WiFi aggiunte per " + wifiManager.getSSID());
+	}
+	else {
+		//In caso di configurazione non valida segnalo con un blink della luce
+		notifyErrorWithLed(BLINKS_NUM_ON_INVALID_CREDENTIAL);
+		Serial.println("La configurazione caricata non è valida");
+	}
+
 	//Terminata la fase di configurazione il led si spegne
 	digitalWrite(CONFIGURATION_LED, LOW);
 }

@@ -84,7 +84,7 @@ DynamicJsonDocument WiFiCredential::toJSON() {
     doc["ssid"] = getStringSSID();
     doc["password"] = getStringPassword();
     return doc;
-  }
+}
 
 
 String WiFiCredential::toString() {

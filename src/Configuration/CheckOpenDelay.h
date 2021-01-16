@@ -13,49 +13,37 @@
  *   
  */
 
+#include <ArduinoJson.h>
 #include <ESPAsync_WiFiManager.h>
 
+/*
 class CheckOpenDelay {
 
     private:
 
         ESPAsync_WMParameter* parameter;
 
-        char LABEL[16] = "CheckOpenDelay";
-        char PLACEHOLDER[34] = "Controllo Apertura Porta Ogni (s)";
+        static const int DEFAULT_VALUE = 30;
+        static const char LABEL[16] = "CheckOpenDelay";
+        static const char PLACEHOLDER[34] = "Controllo Apertura Porta Ogni (s)";
 
         int value = 30;
-        int defaultValue = 30;
         char convertedValue[3] = "30";
 
+
     public:
+        CheckOpenDelay();
+        CheckOpenDelay(DynamicJsonDocument* jdoc);
 
-        CheckOpenDelay() {
-            parameter = new ESPAsync_WMParameter(LABEL, PLACEHOLDER, convertedValue, 2);
-        }
+        ESPAsync_WMParameter* getParam();
+        
+        bool isValid();
+        int getValue();
+        void loadFefault();
+        void setValue(int newValue);
 
-        int getValue() {
-            if(isValid())
-                return value;
-            return defaultValue;
-        }
-
-        ESPAsync_WMParameter* getParam() {
-            return parameter;
-        }
-
-        void setValue(int newValue) {
-            value = newValue;
-        }
-
-        bool isValid() {
-            if(value <= 0 || value >= 99) {
-                Serial.println("Valore non ammesso per CheckOpenDelay, impostato al valore di default");
-                return false;
-            }
-            return true;
-        }
+        DynamicJsonDocument toJSON();
 
 };
 
-#endif
+#endif*/
