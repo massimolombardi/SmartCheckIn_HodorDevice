@@ -1,16 +1,17 @@
-/*
- * @Author: Massimo Lombardi
- * @Since: 07/11/2020
- * @Project: Smart Check-In: Hodor
+/**
+ * @author: Massimo Lombardi
+ * @since: 07/11/2020
+ * @project: Smart Check-In: Hodor
  * 
- * @Brief: Software per la gestione della scheda di apertura porta su comando presente su risorsa REST.
+ * @brief: Software per la gestione della scheda di apertura porta su comando presente su risorsa REST.
  * 
  *   Versione   Autore      Data       Commenti
  *   --------- -----------  ---------- -----------
  *   1.0       M. Lombardi  13/12/2020 Introdotta gestione connessioni con ESPAsync_WiFiManager
  *   1.1	   M. Lombardi  09/01/2021 Introdotta gestione dei Tasks con Scheduler
  *   1.2	   M. Lombardi  10/01/2021 Introdotta gestione azioni multiple pulsante
- *  
+ *   1.3	   M. Lombardi  16/01/2021 Itrodotta gestione parametri configurazione aggiuntivi
+ * 
  */
 
 #include <TaskScheduler.h>
@@ -24,6 +25,7 @@
 #define FIRMWARE_VERSION "0.0.4"
 
 #define ACTION_BUTTON_PIN 15
+#define REBOOT_PRESS_DURATION_MS 50
 #define LOGIN_RESET_PRESS_DURATION_MS 5000
 #define WIFI_RESET_PRESS_DURATION_MS 10000
 #define FACTORY_RESET_PRESS_DURATION_MS 20000
@@ -32,10 +34,10 @@
 /*********************************** Firme delle Funzioni ***********************************/
 
 //Tasks
-void restClient();
+void restClientHandler();
 void printStatus();
-void buttonReader();
-void firmwareUpdater();
+void buttonHandler();
+void firmwareUpdateHandler();
 void checkConnectionStatus();
 
 //Callbacks Pulsante
@@ -54,12 +56,15 @@ Configuration cfg;
 //Oggetto per la gestione della connessione
 ConnectionManager cm = ConnectionManager(&cfg);
 
+//Oggetto per la gestione della comunicazione REST
+RestClient restClient = RestClient(&cfg);
+
 //Scheduler e Tasks
 Scheduler scheduler;
 Task printStatusTask(5000, TASK_FOREVER, &printStatus);
-Task buttonReaderTask(0, TASK_FOREVER, &buttonReader);
+Task buttonReaderTask(0, TASK_FOREVER, &buttonHandler);
 Task checkConnectionStatusTask(1000, TASK_FOREVER, &checkConnectionStatus);
-Task restClientTask(5000, TASK_FOREVER, &restClient);
+Task restClientTask(5000, TASK_FOREVER, &restClientHandler);
 
 void setup() {
 
@@ -78,8 +83,8 @@ void setup() {
 	//Inizializzazione del bottone di azioni utente
 	pinMode(ACTION_BUTTON_PIN, INPUT_PULLUP); 
 
-	//Caricamento della configurazione. In caso di errore faccio partire l'AP
-	if(!cfg.initialize()) 
+	//Caricamento della configurazione. In caso di errore faccio partire l'AP ricorsivamente
+	while(!cfg.initialize()) 
 		cm.startConfigAP();
 
 	//Inizializzazione dei Tasks
@@ -129,13 +134,14 @@ void checkConnectionStatus() {
 		//Tentativo di connessione
 		if(cm.MakeConnection() == WIFI_DISCONNECTED) {
 		//Se non riesco a connettermi apro l'AP config
+		//#TODO - forse inserire una tolleranza, altrimenti un drop di connessione temporaneo incastra il device
 		cm.startConfigAP();
 		}
 	}
 }
 
 
-void buttonReader() {
+void buttonHandler() {
 
 	static int duration = 0;
 
@@ -156,6 +162,10 @@ void buttonReader() {
 		resetLoginConfiguration();
 		duration = 0;
 	}
+	else if(duration >= REBOOT_PRESS_DURATION_MS) {
+		ESP.restart();
+		duration = 0;
+	}
 	else {
 		duration = 0;
 	}
@@ -167,16 +177,15 @@ void printStatus() {
 }
 
 
-void restClient() {
+void restClientHandler() {
 	if(cm.isConnectionActive()) {
-		RestClient rc;
-		rc.getToken();
-		//Serial.println(cfg.getLoginUsername() + " " + cfg.getLoginPassword()); 
+		restClient.login();
+		restClient.status();
 	}
 }
 
 
-void firmwareUpdater() {
+void firmwareUpdateHandler() {
 
 	if(cm.isConnectionActive()) {
 

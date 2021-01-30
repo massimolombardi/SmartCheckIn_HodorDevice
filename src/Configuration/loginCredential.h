@@ -1,11 +1,11 @@
 #ifndef LOGINCREDENTIAL_H
 #define LOGINCREDENTIAL_H
-/*
- * @Author: Massimo Lombardi
- * @Since: 07/11/2020
- * @Project: Smart Check-In: Hodor
+/**
+ * @author: Massimo Lombardi
+ * @since: 07/11/2020
+ * @project: Smart Check-In: Hodor
  * 
- * @Brief: Classe per la gestione delle credenziali per il login alle risorse REST
+ * @brief: Classe per la gestione delle credenziali per il login alle risorse REST
  * 
  *   Versione   Autore      Data       Commenti
  *   --------- -----------  ---------- -----------

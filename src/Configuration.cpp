@@ -1,15 +1,18 @@
-    /*
- * @Author: Massimo Lombardi
- * @Since: 05/01/2021
- * @Project: Smart Check-In: Hodor
+/**
+ * @author: Massimo Lombardi
+ * @since: 05/01/2021
+ * @project: Smart Check-In: Hodor
  * 
- * @Brief: Implementazione della classe per la gestione delle impostazioni configurabili sull'AP di configurazione
+ * @brief: Classe per la gestione delle impostazioni configurabili sull'AP di configurazione
  * 
  *   Versione   Autore      Data       Commenti
  *   --------- -----------  ---------- -----------
  *   1.0       M. Lombardi  05/01/2021 Creazione
  *   1.1       M. Lombardi  09/01/2021 Aggiunta gestione della memorizzazione e cancellazione credenziali
- * 
+ *   1.2       M. Lombardi  16/01/2021 Migliorata gestione caricamento, salvataggio e cancellazione configurazioni
+ *                                     Introdotta gestione parametri di login a risorse Smart Check-In
+ *   1.3       M. Lombardi  17/01/2021 Aggiunta documentazione delle chiamate di classe
+ *   
  */
 
 #include <ArduinoJson.h>
@@ -24,14 +27,10 @@ Configuration::Configuration() {
 
 
 void Configuration::initForConfigAP(ESPAsync_WiFiManager& wifiManager)  {
-    //wifiManager.addParameter(apiUrl.getParam());
-    //wifiManager.addParameter(checkOpenDelay.getParam());
     wifiManager.addParameter(loginCredential.getUsernameConfigField());
     wifiManager.addParameter(loginCredential.getPasswordConfigField());
 }
 
-
-/***************************** GESTIONE Credenziali WiFi *****************************/
 
 bool Configuration::loadWiFiCredential() {
     
@@ -68,29 +67,16 @@ void Configuration::resetWiFiCredential() {
 }
 
 
-char* Configuration::getWiFiSSID() {
-    return wifiCredential.getSSID();
-}
-
-
-char* Configuration::getWiFiPassword() {
-    return wifiCredential.getPassword();
-}
-
-
-
-/***************************** GESTIONE Credenziali Login *****************************/
-
 bool Configuration::loadLoginCredential() {
     
     Serial.println("Lettura delle credenziali da file");
 
     DynamicJsonDocument doc(200);
-    if(!FileHandler::loadJson(CREDENTIAL_FILENAME, &doc))
+    if(!FileHandler::loadJson(SMART_CHECKIN_FILENAME, &doc))
         return false;
 
-    wifiCredential = WiFiCredential(doc);
-    return wifiCredential.isValid();
+    loginCredential = LoginCredential(doc);
+    return loginCredential.isValid();
 }
 
 
@@ -101,7 +87,6 @@ bool Configuration::saveLoginCredential() {
     if(FileHandler::fileExists(SMART_CHECKIN_FILENAME))
         return true;
 
-/*
     if(loginCredential.loadFromConfigField()) {
         DynamicJsonDocument jdoc = loginCredential.toJSON();
         return FileHandler::writeJson(SMART_CHECKIN_FILENAME, &jdoc);
@@ -109,7 +94,7 @@ bool Configuration::saveLoginCredential() {
     else {
         Serial.println("Lettura dei parametri di Login dal portale di configurazione fallita");
         return false;
-    }*/
+    }
     return true;
 }
 
@@ -118,19 +103,6 @@ void Configuration::resetLoginCredential() {
     FileHandler::deleteFile(SMART_CHECKIN_FILENAME);
 }
 
-
-String Configuration::getLoginUsername() {
-    return loginCredential.getStringUsername();
-}
-
-
-String Configuration::getLoginPassword() {
-    return loginCredential.getStringPassword();
-}
-
-
-
-/***************************** GESTIONE Altri Parametri *****************************/
 
 bool Configuration::initialize() {
 
@@ -165,23 +137,6 @@ bool Configuration::initialize() {
     }  
     
     return loadingOk;
-
-/*
-    DynamicJsonDocument doc(200);
-    if(!FileHandler::loadJson(CONFIGURATION_FILENAME, &doc))
-        return false;
-    
-    checkOpenDelay = CheckOpenDelay(&doc);
-*/
-    //Parametri wifi o login non validi 
-    //return false
-
-    //parametri extra non validi
-    //carico default
-    //retur true
-
-    //tutto valido
-    //return true
 }
 
 
@@ -189,8 +144,8 @@ bool Configuration::save(ESPAsync_WiFiManager& wifiManager) {
     
     bool saveOk = true;
 
-    saveOk = saveWiFiCredential(wifiManager.getSSID(), wifiManager.getPW());
-    saveOk = saveLoginCredential();
+    saveOk &= saveWiFiCredential(wifiManager.getSSID(), wifiManager.getPW());
+    saveOk &= saveLoginCredential();
 
     return saveOk;
 }
@@ -200,19 +155,41 @@ void Configuration::factoryReset() {
     FileHandler::formatFilesystem();
 }
 
-String Configuration::getUsername() {}
-String Configuration::getPassword() {}
+
 
 String Configuration::getAPIBaseUrl() {
-    //return apiUrl.getValue();
+    return "https://smartcheckin.cloud";
 }
 
+
 int Configuration::getCheckOpenDelay() {
-    //return checkOpenDelay.getValue();
+    return 30;
 };
 
 
+String Configuration::getLoginUsername() {
+    return loginCredential.getStringUsername();
+}
+
+
+String Configuration::getLoginPassword() {
+    return loginCredential.getStringPassword();
+}
+
+
+char* Configuration::getWiFiSSID() {
+    return wifiCredential.getSSID();
+}
+
+
+char* Configuration::getWiFiPassword() {
+    return wifiCredential.getPassword();
+}
+
+
+/* Funzione per il merge di piu file json
 void mergeJSON(JsonObject dest, JsonObjectConst src) {
    for (auto kvp : src)
      dest[kvp.key()] = kvp.value();
 }
+*/

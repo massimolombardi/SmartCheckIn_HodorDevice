@@ -1,9 +1,9 @@
-/*
- * @Author: Massimo Lombardi
- * @Since: 07/11/2020
- * @Project: Smart Check-In: Hodor
+/**
+ * @author: Massimo Lombardi
+ * @since: 07/11/2020
+ * @project: Smart Check-In: Hodor
  * 
- * @Brief: Classe Singleton per la gestione del File System attraverso la libreria LittleFS per ESP32. 
+ * @brief: Classe Singleton per la gestione del File System attraverso la libreria LittleFS per ESP32. 
  *         Questa classe va inclusa per prima altrimenti l'applicativo crasha per colpa di un problema sulla libreria FS.h
  *         La classe si occupa di astrarre ulteriormente l'utilizzo del File System, rendendo più sicuro l'accesso all'oggetto
  *         File System esposto da LittleFS. La libreria NON include alcun meccanismo di Thread-Safety.
@@ -12,6 +12,7 @@
  *   --------- -----------  ---------- -----------
  *   1.0       M. Lombardi  13/12/2020 Creazione
  *   1.1       M. Lombardi  21/12/2020 Introdotta lettura/scrittura di JSON da file
+ *   1.2       M. Lombardi  23/12/2020 Introdotta documentazione di utilizzo
  *   
  */
 

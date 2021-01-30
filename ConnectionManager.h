@@ -1,17 +1,19 @@
 #ifndef CONNECTIONMANAGER_H
 #define CONNECTIONMANAGER_H
-/*
- * @Author: Massimo Lombardi
- * @Since: 07/11/2020
- * @Project: Smart Check-In: Hodor
+/**
+ * @author: Massimo Lombardi
+ * @since: 07/11/2020
+ * @project: Smart Check-In: Hodor
  * 
- * @Brief: Classe per la gestione della connessione WiFi utilizzando ESPAsync_WiFiManager
+ * @brief: Classe per la gestione della connessione WiFi utilizzando ESPAsync_WiFiManager
  * 
  *   Versione   Autore      Data       Commenti
  *   --------- -----------  ---------- -----------
  *   1.0       M. Lombardi  13/12/2020 Creazione
  *   1.1       M. Lombardi  09/01/2021 Migliorata gestione dell'AP di configurazione
  *                                     Migliorata gestione della memorizzazione credenziali
+ *   1.2	   M. Lombardi  16/01/2021 Itrodotta gestione parametri configurazione aggiuntivi
+ * 
  */
 
 #include <WiFiMulti.h>

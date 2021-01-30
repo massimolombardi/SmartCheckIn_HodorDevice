@@ -1,11 +1,11 @@
 #ifndef FILEHANDLER_H
 #define FILEHANDLER_H
-/*
- * @Author: Massimo Lombardi
- * @Since: 07/11/2020
- * @Project: Smart Check-In: Hodor
+/**
+ * @author: Massimo Lombardi
+ * @since: 07/11/2020
+ * @project: Smart Check-In: Hodor
  * 
- * @Brief: Classe Singleton per la gestione del File System attraverso la libreria LittleFS per ESP32. 
+ * @brief: Classe Singleton per la gestione del File System attraverso la libreria LittleFS per ESP32. 
  *         Questa classe va inclusa per prima altrimenti l'applicativo crasha per colpa di un problema sulla libreria FS.h
  *         La classe si occupa di astrarre ulteriormente l'utilizzo del File System, rendendo più sicuro l'accesso all'oggetto
  *         File System esposto da LittleFS. La libreria NON include alcun meccanismo di Thread-Safety.
@@ -14,6 +14,7 @@
  *   --------- -----------  ---------- -----------
  *   1.0       M. Lombardi  13/12/2020 Creazione
  *   1.1       M. Lombardi  21/12/2020 Introdotta lettura/scrittura di JSON da file
+ *   1.2       M. Lombardi  23/12/2020 Introdotta documentazione di utilizzo
  *   
  */
 
@@ -46,29 +47,29 @@ class FileHandler {
         /**
          * Metodo statico per la scrittura di un file JSON su File System.
          * 
-         * @Param fileName contiene il nome del file da scrivere
-         * @Param jsonObject è un puntatore all'oggetto DynamicJsonDocument da scrivere sul file
+         * @param fileName contiene il nome del file da scrivere
+         * @param jsonObject è un puntatore all'oggetto DynamicJsonDocument da scrivere sul file
          * 
-         * @Return true se la scrittura va a buon fine, false altrimenti
+         * @return true se la scrittura va a buon fine, false altrimenti
          */ 
         static bool writeJson(String fileName, DynamicJsonDocument* jsonObject);
 
         /**
          * Metodo statico per la lettura di un file JSON da File System.
          * 
-         * @Param fileName contiene il nome del file da leggere
-         * @Param jsonObject è un puntatore all'oggetto DynamicJsonDocument su cui scrivere le informazioni lette
+         * @param fileName contiene il nome del file da leggere
+         * @param jsonObject è un puntatore all'oggetto DynamicJsonDocument su cui scrivere le informazioni lette
          * 
-         * @Return true se la lettura va a buon fine, false altrimenti
+         * @return true se la lettura va a buon fine, false altrimenti
          */ 
         static bool loadJson(String fileName, DynamicJsonDocument* jsonObject);
 
         /**
          * Metodo statico per la cancellazione di un file da File System.
          * 
-         * @Param fileName contiene il nome del file da eliminare
+         * @param fileName contiene il nome del file da eliminare
          * 
-         * @Return true se l'eliminazione va a buon fine, false altrimenti
+         * @return true se l'eliminazione va a buon fine, false altrimenti
          */ 
         static bool deleteFile(String fileName);
 
@@ -76,9 +77,9 @@ class FileHandler {
         /**
          * Metodo statico per il controllo di esistenza di un file da File System.
          * 
-         * @Param fileName contiene il nome del file cercato
+         * @param fileName contiene il nome del file cercato
          * 
-         * @Return true se il file esiste, false altrimenti
+         * @return true se il file esiste, false altrimenti
          */ 
         static bool fileExists(String fileName);
 
@@ -119,7 +120,7 @@ class FileHandler {
          * Il metodo di accesso all'oggetto file System è utilizzato esclusivamente all'interno della classe,
          * in questo modo non è possibile effettuare operazioni sul file System non previste dalla classe di gestione.
          * 
-         * @Return il puntatore all'oggetto File System
+         * @return il puntatore all'oggetto File System
          */ 
         static FS* getInstance();
 

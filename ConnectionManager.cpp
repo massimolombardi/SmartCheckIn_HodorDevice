@@ -1,15 +1,17 @@
-/*
- * @Author: Massimo Lombardi
- * @Since: 07/11/2020
- * @Project: Smart Check-In: Hodor
+/**
+ * @author: Massimo Lombardi
+ * @since: 07/11/2020
+ * @project: Smart Check-In: Hodor
  * 
- * @Brief: Implementazione della classe per la gestione della connessione WiFi utilizzando ESPAsync_WiFiManager
+ * @brief: Classe per la gestione della connessione WiFi utilizzando ESPAsync_WiFiManager
  * 
  *   Versione   Autore      Data       Commenti
  *   --------- -----------  ---------- -----------
  *   1.0       M. Lombardi  13/12/2020 Creazione
  *   1.1       M. Lombardi  09/01/2021 Migliorata gestione dell'AP di configurazione
  *                                     Migliorata gestione della memorizzazione credenziali
+ *   1.2	   M. Lombardi  16/01/2021 Itrodotta gestione parametri configurazione aggiuntivi
+ * 
  */
 
 #include <WiFi.h>
@@ -25,10 +27,6 @@ ConnectionManager::ConnectionManager(Configuration* configuration) {
 
 WIFI_CONNECTION_STATUS ConnectionManager::MakeConnection() {
 
-	//if(!loadConnectionParams()) {
-	//	Serial.println("Impossibile connettersi con credenziali non valide");  
-	//	return WIFI_DISCONNECTED;
-	//}
 	//Caricamento della configurazione all'interno del WiFi Handler
 	wifiHandler.addAP(cfg->getWiFiSSID(), cfg->getWiFiPassword());
 
@@ -70,7 +68,7 @@ void ConnectionManager::startConfigAP() {
 	wifiManager.setConfigPortalChannel(0);
 
 	//Inizializzazione dei parametri aggiuntivi di configurazione
-	//cfg->initForConfigAP(wifiManager);
+	cfg->initForConfigAP(wifiManager);
 
 	//Notifica apertura portale con il led accesso
 	digitalWrite(CONFIGURATION_LED, HIGH);
@@ -81,18 +79,6 @@ void ConnectionManager::startConfigAP() {
 	else {
 		Serial.println("Configurazione Completata. Avvio del device con i nuovi parametri");
 	}
-
-/*
-	if(cfg->saveWiFiCredential(wifiManager.getSSID(), wifiManager.getPW())) {
-		Serial.println("Credenziali salvate per " + wifiManager.getSSID());
-		wifiHandler.addAP(cfg->getWiFiSSID(), cfg->getWiFiPassword());
-	}
-	else {
-		//In caso di configurazione non valida segnalo con un blink della luce
-		notifyErrorWithLed(BLINKS_NUM_ON_INVALID_CREDENTIAL);
-		Serial.println("SSID o Password non validi");
-	}
-*/
 
 	if(cfg->save(wifiManager)) {
 		Serial.println("Configurazione salvata con successo");
@@ -107,19 +93,6 @@ void ConnectionManager::startConfigAP() {
 
 	//Terminata la fase di configurazione il led si spegne
 	digitalWrite(CONFIGURATION_LED, LOW);
-}
-
-
-bool ConnectionManager::loadConnectionParams() {
-  if(cfg->loadWiFiCredential()) {
-    Serial.println("Credenziali caricate per " + String(cfg->getWiFiSSID()));
-    wifiHandler.addAP(cfg->getWiFiSSID(), cfg->getWiFiPassword());
-    return true;
-  }
-  else {
-    Serial.println("Nessuna configurazione WiFi valida trovata");
-    return false;
-  }
 }
 
 
