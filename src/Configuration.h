@@ -31,8 +31,8 @@
 class Configuration {
 
     private:
-        //BaseApiUrl apiUrl;
-        //CheckOpenDelay checkOpenDelay;
+        String APIHost = "lombardihome.duckdns.org";
+        String APIPort = "8443";
         WiFiCredential wifiCredential;
         LoginCredential loginCredential;
 
@@ -148,7 +148,8 @@ class Configuration {
         /**
          * Metodi di get per il recupero dei valori di configurazione salvati in memoria.
          */ 
-        String getAPIBaseUrl();
+        String getAPIHost();
+        String getAPIPort();
         int getCheckOpenDelay();
         char* getWiFiSSID();
         char* getWiFiPassword();

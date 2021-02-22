@@ -10,16 +10,17 @@
  *   1.0       M. Lombardi  13/12/2020 Introdotta gestione connessioni con ESPAsync_WiFiManager
  *   1.1	   M. Lombardi  09/01/2021 Introdotta gestione dei Tasks con Scheduler
  *   1.2	   M. Lombardi  10/01/2021 Introdotta gestione azioni multiple pulsante
- *   1.3	   M. Lombardi  16/01/2021 Itrodotta gestione parametri configurazione aggiuntivi
+ *   1.3	   M. Lombardi  16/01/2021 Introdotta gestione parametri configurazione aggiuntivi
  * 
  */
 
 #include <TaskScheduler.h>
 #include <ESP32httpUpdate.h>
 
-#include "RestClient.h"
+#include "APIHandler.h"
 #include "ConnectionManager.h"
 #include "src/Configuration.h"
+#include "src/Device/DeviceStatus.h"
 #include "src/FileSystem/FileHandler.h"
 
 #define FIRMWARE_VERSION "0.0.4"
@@ -57,7 +58,10 @@ Configuration cfg;
 ConnectionManager cm = ConnectionManager(&cfg);
 
 //Oggetto per la gestione della comunicazione REST
-RestClient restClient = RestClient(&cfg);
+APIHandler apiHandler = APIHandler(&cfg);
+
+//Oggetto per la gestione dello stato device
+DeviceStatus deviceStatus = DeviceStatus(FIRMWARE_VERSION);
 
 //Scheduler e Tasks
 Scheduler scheduler;
@@ -133,9 +137,9 @@ void checkConnectionStatus() {
 		Serial.println("Tentativo di ristabilire la connessione");
 		//Tentativo di connessione
 		if(cm.MakeConnection() == WIFI_DISCONNECTED) {
-		//Se non riesco a connettermi apro l'AP config
-		//#TODO - forse inserire una tolleranza, altrimenti un drop di connessione temporaneo incastra il device
-		cm.startConfigAP();
+			//Se non riesco a connettermi apro l'AP config
+			//#TODO - forse inserire una tolleranza, altrimenti un drop di connessione temporaneo incastra il device
+			cm.startConfigAP();
 		}
 	}
 }
@@ -178,9 +182,10 @@ void printStatus() {
 
 
 void restClientHandler() {
+	Serial.println(deviceStatus.getDeviceID());
 	if(cm.isConnectionActive()) {
-		restClient.login();
-		restClient.status();
+		apiHandler.login();
+		apiHandler.status(deviceStatus.getOperative(), deviceStatus.getErrorInfo());
 	}
 }
 
@@ -193,7 +198,7 @@ void firmwareUpdateHandler() {
 
 		switch(ret) {
 			case HTTP_UPDATE_FAILED:
-				Serial.printf("HTTP_UPDATE_FAILD Error (%d): %s", ESPhttpUpdate.getLastError(), ESPhttpUpdate.getLastErrorString().c_str());
+				Serial.printf("HTTP_UPDATE_FAILED Error (%d): %s", ESPhttpUpdate.getLastError(), ESPhttpUpdate.getLastErrorString().c_str());
 				break;
 
 			case HTTP_UPDATE_NO_UPDATES:

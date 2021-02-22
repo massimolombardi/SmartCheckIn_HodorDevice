@@ -157,8 +157,13 @@ void Configuration::factoryReset() {
 
 
 
-String Configuration::getAPIBaseUrl() {
-    return "https://smartcheckin.cloud";
+String Configuration::getAPIHost() {
+    return APIHost;
+}
+
+
+String Configuration::getAPIPort() {
+    return APIPort;
 }
 
 
