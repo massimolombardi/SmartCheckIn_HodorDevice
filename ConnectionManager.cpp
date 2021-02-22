@@ -10,7 +10,7 @@
  *   1.0       M. Lombardi  13/12/2020 Creazione
  *   1.1       M. Lombardi  09/01/2021 Migliorata gestione dell'AP di configurazione
  *                                     Migliorata gestione della memorizzazione credenziali
- *   1.2	   M. Lombardi  16/01/2021 Itrodotta gestione parametri configurazione aggiuntivi
+ *   1.2	   M. Lombardi  16/01/2021 Introdotta gestione parametri configurazione aggiuntivi
  * 
  */
 
