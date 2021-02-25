@@ -20,11 +20,13 @@
 #include "APIHandler.h"
 #include "ConnectionManager.h"
 #include "src/Configuration.h"
+#include "src/Device/OpenAction.h"
 #include "src/Device/DeviceStatus.h"
 #include "src/FileSystem/FileHandler.h"
 
-#define FIRMWARE_VERSION "0.0.4"
+#define FIRMWARE_VERSION "0.0.5"
 
+#define OPEN_ACTION_PIN 16
 #define ACTION_BUTTON_PIN 15
 #define REBOOT_PRESS_DURATION_MS 50
 #define LOGIN_RESET_PRESS_DURATION_MS 5000
@@ -63,6 +65,9 @@ APIHandler apiHandler = APIHandler(&cfg);
 //Oggetto per la gestione dello stato device
 DeviceStatus deviceStatus = DeviceStatus(FIRMWARE_VERSION);
 
+//Oggetto per la gestione del comando di apertura
+OpenAction openAction = OpenAction();
+
 //Scheduler e Tasks
 Scheduler scheduler;
 Task printStatusTask(5000, TASK_FOREVER, &printStatus);
@@ -86,6 +91,9 @@ void setup() {
 
 	//Inizializzazione del bottone di azioni utente
 	pinMode(ACTION_BUTTON_PIN, INPUT_PULLUP); 
+
+	//Inizializzazione del bottone di apertura
+	pinMode(OPEN_ACTION_PIN, OUTPUT); 
 
 	//Caricamento della configurazione. In caso di errore faccio partire l'AP ricorsivamente
 	while(!cfg.initialize()) 
@@ -182,10 +190,19 @@ void printStatus() {
 
 
 void restClientHandler() {
-	Serial.println(deviceStatus.getDeviceID());
+	
+	static int count = 0;
+	
 	if(cm.isConnectionActive()) {
-		apiHandler.login();
-		apiHandler.status(deviceStatus.getOperative(), deviceStatus.getErrorInfo());
+		if(apiHandler.checkOpen()) {
+			openAction.open(OPEN_ACTION_PIN, 2000);
+			//apiHandler.openConfirmation();
+		}
+		count++;
+		if(count >= 5) {
+			count = 0;
+			apiHandler.status(deviceStatus.getOperative(), deviceStatus.getErrorInfo());
+		}		
 	}
 }
 
