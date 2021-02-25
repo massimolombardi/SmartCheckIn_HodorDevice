@@ -34,6 +34,7 @@ class APIHandler {
 		String LOGIN_RESOUCE = "/auth/login";
 		String STATUS_RESOUCE = "/devices/status";
 		String CHECK_OPEN_RESOUCE = "/actions/open";
+		String CHECK_OPEN_CONFIRMATION_RESOUCE = "/actions/open/confirmed";
 
 		RestClient* restClient;
 		bool activeSession;
@@ -49,6 +50,7 @@ class APIHandler {
 		void login();
 		void status(bool operative, String errorInfo);
 		bool checkOpen();
+		bool openConfirmation();
 
 };
 

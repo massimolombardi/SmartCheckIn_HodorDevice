@@ -26,8 +26,7 @@ void APIHandler::login() {
 
 	if(!activeSession) {
 		
-		//String content = String("{ \"email\": \"") + cfg->getLoginUsername() + String("\", \"password\": \"") +  cfg->getLoginPassword() + "\" }";
-		String content = "{ \"username\": \"Test\", \"password\": \"test\", \"deviceId\": \"test\" }";
+		String content = String("{ \"username\": \"") + cfg->getLoginUsername() + String("\", \"password\": \"") +  cfg->getLoginPassword() + "\", \"deviceId\": \"" + cfg->getDeviceID() + String("\" }");
 		
 		DynamicJsonDocument doc(MAX_JSON_BUFFER);
 		int httpStatus = restClient->POST(LOGIN_RESOUCE, content, "", &doc);
@@ -58,7 +57,7 @@ void APIHandler::status(bool operative, String errorInfo) {
 
 	if(activeSession) {
 		
-		String content = String("{ \"operative\": ") + operative ? String("true") : String("false") + String(",\"softwareVersionNumber\": \"0.4\", \"errorInfo\": \"") + errorInfo + String("\" }");
+		String content = String("{ \"operative\": ") + (operative ? String("true") : String("false")) + String(", \"softwareVersionNumber\": \"0.4\", \"errorInfo\": \"") + errorInfo + String("\" }");
 
 		DynamicJsonDocument doc(MAX_JSON_BUFFER);
 		int httpStatus = restClient->POST(STATUS_RESOUCE, content, authToken, &doc);
@@ -90,7 +89,33 @@ bool APIHandler::checkOpen() {
 		if(httpStatus == 200) {	
 			Serial.println("Richiesta di controllo apertura inviata");
 			bool openRequired = doc["openRequired"];
-			Serial.println("Ricevuto comando di apertura");
+			Serial.println("Ricevuto comando di apertura: " + (openRequired ? String("true") : String("false")));
+			return openRequired;
+		}
+		else if(httpStatus == 401) {
+			activeSession = false;
+		}
+		else {
+			Serial.println("Ricevuto HTTP Status Code dalla risorsa STATUS: " + String(httpStatus));
+		}
+	}
+	else {
+		Serial.println("Tentativo di autenticazione in corso...");
+		login();
+	}
+
+	return false;
+}
+
+
+bool APIHandler::openConfirmation() {
+
+	if(activeSession) {
+
+		DynamicJsonDocument doc(MAX_JSON_BUFFER);
+		int httpStatus = restClient->POST(CHECK_OPEN_CONFIRMATION_RESOUCE, "{}", authToken, &doc);
+
+		if(httpStatus == 200) {	
 			return true;
 		}
 		else if(httpStatus == 401) {
