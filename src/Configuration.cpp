@@ -12,6 +12,7 @@
  *   1.2       M. Lombardi  16/01/2021 Migliorata gestione caricamento, salvataggio e cancellazione configurazioni
  *                                     Introdotta gestione parametri di login a risorse Smart Check-In
  *   1.3       M. Lombardi  17/01/2021 Aggiunta documentazione delle chiamate di classe
+ *   1.4       M. Lombardi  25/02/2021 Aggiunta gestione parametro device ID
  *   
  */
 
@@ -23,12 +24,14 @@
 Configuration::Configuration() {
     wifiCredential = WiFiCredential();
     loginCredential = LoginCredential();
+    deviceID = DeviceID();
 }
 
 
 void Configuration::initForConfigAP(ESPAsync_WiFiManager& wifiManager)  {
     wifiManager.addParameter(loginCredential.getUsernameConfigField());
     wifiManager.addParameter(loginCredential.getPasswordConfigField());
+    wifiManager.addParameter(deviceID.getDeviceIDConfigField());
 }
 
 
@@ -104,6 +107,43 @@ void Configuration::resetLoginCredential() {
 }
 
 
+bool Configuration::loadDeviceID() {
+    
+    Serial.println("Lettura del device ID da file");
+
+    DynamicJsonDocument doc(200);
+    if(!FileHandler::loadJson(DEVICE_ID_FILENAME, &doc))
+        return false;
+
+    deviceID = DeviceID(doc);
+    return deviceID.isValid();
+}
+
+
+bool Configuration::saveDeviceID() {
+
+    //Se quando chiedo di salvare il file esiste significa che non è stato richiesto il reset di quell'impostazione
+    //quindi ignoro il salvataggio di questa parte e considero sia già stata fatta, in modo da evitare la segnalazione non voluta di errori
+    if(FileHandler::fileExists(DEVICE_ID_FILENAME))
+        return true;
+
+    if(deviceID.loadFromConfigField()) {
+        DynamicJsonDocument jdoc = deviceID.toJSON();
+        return FileHandler::writeJson(DEVICE_ID_FILENAME, &jdoc);
+    }
+    else {
+        Serial.println("Lettura dei parametri relativi al device ID dal portale di configurazione fallita");
+        return false;
+    }
+    return true;
+}
+
+
+void Configuration::resetDeviceID() {
+    FileHandler::deleteFile(DEVICE_ID_FILENAME);
+}
+
+
 bool Configuration::initialize() {
 
     bool loadingOk = true; 
@@ -135,7 +175,20 @@ bool Configuration::initialize() {
         else
             loadingOk = false;
     }  
-    
+
+    DynamicJsonDocument doc3(200);
+    if(!FileHandler::loadJson(DEVICE_ID_FILENAME, &doc3)) {
+        Serial.println("Impossibile caricare il file " + String(DEVICE_ID_FILENAME));
+        loadingOk = false;
+    }
+    else {
+        deviceID = DeviceID(doc3);
+        if(deviceID.isValid())
+            Serial.println("Configurazione device ID caricata con successo");
+        else
+            loadingOk = false;
+    } 
+
     return loadingOk;
 }
 
@@ -146,6 +199,7 @@ bool Configuration::save(ESPAsync_WiFiManager& wifiManager) {
 
     saveOk &= saveWiFiCredential(wifiManager.getSSID(), wifiManager.getPW());
     saveOk &= saveLoginCredential();
+    saveOk &= saveDeviceID();
 
     return saveOk;
 }
@@ -181,6 +235,10 @@ String Configuration::getLoginPassword() {
     return loginCredential.getStringPassword();
 }
 
+
+String Configuration::getDeviceID() {
+    return deviceID.getStringDeviceID();
+}
 
 char* Configuration::getWiFiSSID() {
     return wifiCredential.getSSID();

@@ -14,16 +14,17 @@
  *   1.2       M. Lombardi  16/01/2021 Migliorata gestione caricamento, salvataggio e cancellazione configurazioni
  *                                     Introdotta gestione parametri di login a risorse Smart Check-In
  *   1.3       M. Lombardi  17/01/2021 Aggiunta documentazione delle chiamate di classe
+ *   1.4       M. Lombardi  25/02/2021 Aggiunta gestione parametro device ID
  *   
  */
 
 #include <ESPAsync_WiFiManager.h>
-//#include "Configuration/BaseApiUrl.h"
-//#include "Configuration/CheckOpenDelay.h"
+#include "Configuration/DeviceID.h"
 #include "Configuration/WiFiCredential.h"
 #include "Configuration/LoginCredential.h"
 
 #define CREDENTIAL_FILENAME F("/wifi.json")
+#define DEVICE_ID_FILENAME F("/deviceid.json")
 #define CONFIGURATION_FILENAME F("/config.json")
 #define SMART_CHECKIN_FILENAME F("/smartcheckin.json")
 
@@ -35,6 +36,7 @@ class Configuration {
         String APIPort = "8443";
         WiFiCredential wifiCredential;
         LoginCredential loginCredential;
+        DeviceID deviceID;
 
 
         /**
@@ -85,6 +87,29 @@ class Configuration {
         bool saveLoginCredential();
 
 
+        /**
+         * Metodo per il caricamento della configurazione del device ID da file che si occupa
+         * anche del controllo di validità dei parametri caricati.
+         * La funzione è privata in quanto utilizzata solo'allinterno della funziona pubblica initialize()
+         * 
+         * @return true se i parametri sono validi, false altrimenti
+         */ 
+        bool loadDeviceID();
+
+
+         /**
+         * Metodo per il salvataggio della configurazione del device ID da file che si occupa
+         * anche del controllo di validità dei parametri caricati. Per consentire reset di configurazioni separati
+         * questa funzione verifica che il file su cui si scrive la configurazione esista, in questo caso infatti 
+         * non è stato richiesto un reset della medesima configurazione e si tralascia il salvataggio. Infatti sull'AP
+         * di configurazione (ad oggi) lasciare i parametri bianchi esprime la volontà di lasciarli invariati.
+         * In questa release del firmware infatti non vengono ripristinati i valori salvati in memoria nell'AP di configurazione.
+         * La funzione è privata in quanto utilizzata solo'allinterno della funziona pubblica save()
+         * 
+         * @return true se i parametri sono validi, false altrimenti
+         */ 
+        bool saveDeviceID();
+
     public:
 
         /**
@@ -117,6 +142,13 @@ class Configuration {
          * relativo al Login.
          */ 
         void resetLoginCredential();
+
+
+        /**
+         * Metodo per reset della configurazione relativa al device ID. Questo metodo elimina il file di configurazione 
+         * relativo al Login.
+         */ 
+        void resetDeviceID();
 
 
         /**
@@ -155,6 +187,7 @@ class Configuration {
         char* getWiFiPassword();
         String getLoginUsername();
         String getLoginPassword();
+        String getDeviceID();
 
 };
 
