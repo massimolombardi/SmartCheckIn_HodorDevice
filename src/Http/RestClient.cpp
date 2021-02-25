@@ -55,7 +55,6 @@ int RestClient::POST(String resource, String payload, String authToken, DynamicJ
 	
 	request += ENDLINE + payload + ENDLINE + ENDLINE;
 
-	Serial.println(request);
 	httpsClient.print(request);
 	
 	int httpStatusCode = getStatusCode();
@@ -85,7 +84,6 @@ int RestClient::GET(String resource, String authToken, DynamicJsonDocument* resp
 	if(authToken != NULL)
 		request += String("Authorization: Bearer ") + authToken + ENDLINE + ENDLINE;
 
-	Serial.println(request);
 	httpsClient.print(request);
 
 	int httpStatusCode = getStatusCode();
