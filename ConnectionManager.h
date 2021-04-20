@@ -13,7 +13,7 @@
  *   1.1       M. Lombardi  09/01/2021 Migliorata gestione dell'AP di configurazione
  *                                     Migliorata gestione della memorizzazione credenziali
  *   1.2	   M. Lombardi  16/01/2021 Introdotta gestione parametri configurazione aggiuntivi
- * 
+ *   1.3       M. Lombardi  20/04/2021 Configurato GPIO led nominale
  */
 
 #include <WiFiMulti.h>
@@ -33,7 +33,7 @@
 
 //Parametri portale di configurazione
 #define DEVICE_NAME "SmartCheckIn_Hodor"
-#define CONFIGURATION_LED 4
+#define CONFIGURATION_LED 16
 #define HTTP_CONFIGURATION_PORT 80
 #define CONFIGURATION_AP_NAME "SmartCheckIn - Config"
 #define CONFIGURATION_AP_PASSWORD "smartcheckin"
