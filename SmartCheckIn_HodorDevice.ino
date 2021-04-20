@@ -11,7 +11,8 @@
  *   1.1	   M. Lombardi  09/01/2021 Introdotta gestione dei Tasks con Scheduler
  *   1.2	   M. Lombardi  10/01/2021 Introdotta gestione azioni multiple pulsante
  *   1.3	   M. Lombardi  16/01/2021 Introdotta gestione parametri configurazione aggiuntivi
- * 
+ *   1.4 	   M. Lombardi  20/04/2021 Introdotti alcuni miglioramenti alla gestione chiamate API
+ * 									   Configurati GPIO previsti da progetto
  */
 
 #include <TaskScheduler.h>
@@ -24,20 +25,47 @@
 #include "src/Device/DeviceStatus.h"
 #include "src/FileSystem/FileHandler.h"
 
-#define FIRMWARE_VERSION "0.0.5"
+#define FIRMWARE_VERSION "0.0.6"
 
-#define OPEN_ACTION_PIN 16
-#define ACTION_BUTTON_PIN 15
+//Pin GPIO per il comando al relay
+#define OPEN_ACTION_PIN 2
+
+//Pin GPIO per il collegamento dello user button
+#define ACTION_BUTTON_PIN 4
+
+//Tempistiche relative alle azioni utente sul pulsante
 #define REBOOT_PRESS_DURATION_MS 50
 #define LOGIN_RESET_PRESS_DURATION_MS 5000
 #define WIFI_RESET_PRESS_DURATION_MS 10000
 #define FACTORY_RESET_PRESS_DURATION_MS 20000
 
+//Delay di mantenimento relay chiuso per impartire il comando
+#define TOGGLE_RELAY_FOR_MS 500
+
+//Numero di retry prima di decretare un problema sulla connessione WiFi
+#define CONNECTION_RETRY_BEFORE_CFG_AP 5
+
+//Delay controllo stato connessione: 1 secondo
+#define CHECK_CONNECTION_STATUS_DELAY_MS 1000
+
+//Delay stampa su seriale stato connessione: 5 secondi
+#define PRINT_STATUS_DELAY_MS 5000
+
+//Delay controllo apertura necessaria: 30 secondi
+#define CHECK_FOR_OPENING_DELAY_MS 30000
+
+//Delay invio aggiornamento status al server: 2 minuti
+#define SEND_STATUS_DELAY_MS 1200000
+
+//Delay controllo aggiornamento firmware: 1 giorno
+#define CHECK_UPDATE_DELAY_MS 86400000
+
 
 /*********************************** Firme delle Funzioni ***********************************/
 
 //Tasks
-void restClientHandler();
+void checkOpenHandler();
+void sendStatusHandler();
 void printStatus();
 void buttonHandler();
 void firmwareUpdateHandler();
@@ -50,8 +78,6 @@ void resetLoginConfiguration();
 
 
 /*********************************** Variabili di Supporto ***********************************/
-
-unsigned long startedAt_ms = 0;
 
 //Oggetto per la gestione dei parametri di configurazione
 Configuration cfg;
@@ -70,18 +96,22 @@ OpenAction openAction = OpenAction();
 
 //Scheduler e Tasks
 Scheduler scheduler;
-Task printStatusTask(5000, TASK_FOREVER, &printStatus);
+Task printStatusTask(PRINT_STATUS_DELAY_MS, TASK_FOREVER, &printStatus);
 Task buttonReaderTask(0, TASK_FOREVER, &buttonHandler);
-Task checkConnectionStatusTask(1000, TASK_FOREVER, &checkConnectionStatus);
-Task restClientTask(5000, TASK_FOREVER, &restClientHandler);
+Task checkConnectionStatusTask(CHECK_CONNECTION_STATUS_DELAY_MS, TASK_FOREVER, &checkConnectionStatus);
+Task checkOpenTask(CHECK_FOR_OPENING_DELAY_MS, TASK_FOREVER, &checkOpenHandler);
+Task sendStatusTask(SEND_STATUS_DELAY_MS, TASK_FOREVER, &sendStatusHandler);
+Task checkUpdateTask(CHECK_UPDATE_DELAY_MS, TASK_FOREVER, &firmwareUpdateHandler);
 
+
+/**
+* Metodo principale di setup del device
+*/
 void setup() {
 
 	//Configurazione della comunicazione su porta seriale
 	Serial.begin(115200);
 	while(!Serial);
-
-	startedAt_ms = millis();
 
 	Serial.println("Avvio del device in corso su " + String(ARDUINO_BOARD));
 	Serial.println("Firmware Version: " + String(FIRMWARE_VERSION));
@@ -92,7 +122,7 @@ void setup() {
 	//Inizializzazione del bottone di azioni utente
 	pinMode(ACTION_BUTTON_PIN, INPUT_PULLUP); 
 
-	//Inizializzazione del bottone di apertura
+	//Inizializzazione del pin di apertura
 	pinMode(OPEN_ACTION_PIN, OUTPUT); 
 
 	//Caricamento della configurazione. In caso di errore faccio partire l'AP ricorsivamente
@@ -103,21 +133,29 @@ void setup() {
 	scheduler.addTask(printStatusTask);
 	scheduler.addTask(buttonReaderTask);
 	scheduler.addTask(checkConnectionStatusTask);
-	scheduler.addTask(restClientTask);
+	scheduler.addTask(checkOpenTask);
+	scheduler.addTask(sendStatusTask);
 
 	//Avvio dei Tasks
 	printStatusTask.enable();
 	buttonReaderTask.enable();
 	checkConnectionStatusTask.enable();
-	restClientTask.enable();
+	checkOpenTask.enable();
+	sendStatusTask.enable();
 }
 
 
+/**
+* Loop principale
+*/
 void loop() {
   scheduler.execute();
 }
 
 
+/**
+* Funzione per la gestione del reset configurazione WiFi su comando
+*/
 void resetWiFiConfiguration() {
     Serial.println("Ricevuto comando di reset parametri di rete");
     cm.disconnect();
@@ -126,6 +164,9 @@ void resetWiFiConfiguration() {
 }
 
 
+/**
+* Funzione per la gestione del reset configurazione credenziali API su comando
+*/
 void resetLoginConfiguration() {
     Serial.println("Ricevuto comando di reset parametri di Login");
     cfg.resetLoginCredential();
@@ -133,6 +174,9 @@ void resetLoginConfiguration() {
 }
 
 
+/**
+* Funzione per la gestione del factory reset su comando
+*/
 void factoryReset() {
   Serial.println("Ricevuto comando di factory reset");
   cm.disconnect();
@@ -140,19 +184,37 @@ void factoryReset() {
 }
 
 
+/**
+* Task per il controllo dello stato connessione
+*/
 void checkConnectionStatus() {
+
+	static int connectionRetryCounter = 0;
+
 	if(!cm.isConnectionActive()) {
+
 		Serial.println("Tentativo di ristabilire la connessione");
+		
 		//Tentativo di connessione
-		if(cm.MakeConnection() == WIFI_DISCONNECTED) {
-			//Se non riesco a connettermi apro l'AP config
-			//#TODO - forse inserire una tolleranza, altrimenti un drop di connessione temporaneo incastra il device
-			cm.startConfigAP();
+		int status = cm.MakeConnection();
+
+		if(status == WIFI_DISCONNECTED) {
+			connectionRetryCounter++;
+			if(connectionRetryCounter < CONNECTION_RETRY_BEFORE_CFG_AP) {
+				//Se non riesco a connettermi per CONNECTION_RETRY_BEFORE_CFG_AP volte apro l'AP config
+				cm.startConfigAP();
+			}
+		}
+		else {
+			connectionRetryCounter = 0;
 		}
 	}
 }
 
 
+/**
+* Task per il controllo delle azioni eseguite sul bottone utente
+*/
 void buttonHandler() {
 
 	static int duration = 0;
@@ -184,32 +246,45 @@ void buttonHandler() {
 }
 
 
+/**
+* Task per la stampa dello stato connessione
+*/
 void printStatus() {
 	cm.dumpConnectionStatus();
 }
 
 
-void restClientHandler() {
-	
-	static int count = 0;
-	
+/**
+* Task per l'invio dello stato al server
+*/
+void sendStatusHandler() {
 	if(cm.isConnectionActive()) {
-		if(apiHandler.checkOpen()) {
-			openAction.open(OPEN_ACTION_PIN, 2000);
-			//apiHandler.openConfirmation();
-		}
-		count++;
-		if(count >= 5) {
-			count = 0;
-			apiHandler.status(deviceStatus.getOperative(), deviceStatus.getErrorInfo());
-		}		
+		apiHandler.status(deviceStatus.getOperative(), deviceStatus.getErrorInfo());
 	}
 }
 
 
+/**
+* Task per il controllo apertura necessaria
+*/
+void checkOpenHandler() {
+	if(cm.isConnectionActive()) {
+		if(apiHandler.checkOpen()) {
+			openAction.open(OPEN_ACTION_PIN, TOGGLE_RELAY_FOR_MS);
+			apiHandler.openConfirmation();
+		}	
+	}
+}
+
+
+/**
+* Task per la gestione degli aggiornamenti firmware
+*/
 void firmwareUpdateHandler() {
 
 	if(cm.isConnectionActive()) {
+
+		//TODO: Controllare se necessario aggiornare prima di effettuare l'aggiornamento
 
 		t_httpUpdate_return ret = ESPhttpUpdate.update("http://192.168.1.18/firmware.bin");
 
