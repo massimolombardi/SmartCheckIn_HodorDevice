@@ -154,10 +154,18 @@ bool RestClient::parseJsonPayload(DynamicJsonDocument* doc) {
 
 		char buffer[MAX_JSON_BUFFER];
 		int i = 0;
+		int cleanCounter = 0;		
 		while(httpsClient.available()) {
+			
 
-			while(i == 0 && httpsClient.read() != '{')
+			while(i == 0 && httpsClient.read() != '{') {
 				buffer[i] = '{';
+				cleanCounter++;
+
+				if(cleanCounter >= MAX_JSON_BUFFER)
+					return false;
+			}
+				
 
 			i++;
 
