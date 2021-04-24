@@ -21,17 +21,21 @@
 #include "APIHandler.h"
 #include "ConnectionManager.h"
 #include "src/Configuration.h"
+#include "src/Tests/TestsSuite.h"
 #include "src/Device/OpenAction.h"
 #include "src/Device/DeviceStatus.h"
 #include "src/FileSystem/FileHandler.h"
 
-#define FIRMWARE_VERSION "0.0.6"
+#define FIRMWARE_VERSION "0.0.8"
 
 //Pin GPIO per il comando al relay
 #define OPEN_ACTION_PIN 2
 
 //Pin GPIO per il collegamento dello user button
 #define ACTION_BUTTON_PIN 4
+
+//Pin GPIO per il collegamento del LED di notifica
+#define CONFIGURATION_LED 16
 
 //Tempistiche relative alle azioni utente sul pulsante
 #define REBOOT_PRESS_DURATION_MS 50
@@ -55,7 +59,7 @@
 #define CHECK_FOR_OPENING_DELAY_MS 30000
 
 //Delay invio aggiornamento status al server: 2 minuti
-#define SEND_STATUS_DELAY_MS 1200000
+#define SEND_STATUS_DELAY_MS 120000
 
 //Delay controllo aggiornamento firmware: 1 giorno
 #define CHECK_UPDATE_DELAY_MS 86400000
@@ -142,6 +146,15 @@ void setup() {
 	checkConnectionStatusTask.enable();
 	checkOpenTask.enable();
 	sendStatusTask.enable();
+
+	//Controllo se è richiesto di entrare nella modalità di test
+	if(digitalRead(ACTION_BUTTON_PIN) == LOW) {
+		TestsSuite ts = TestsSuite(CONFIGURATION_LED, OPEN_ACTION_PIN, ACTION_BUTTON_PIN);
+		ts.startTesting();
+	}
+
+	//Controllo se è necessario effettuare un aggiornamento del firmware dal server locale
+	firmwareUpdateHandler();
 }
 
 
@@ -282,15 +295,20 @@ void checkOpenHandler() {
 */
 void firmwareUpdateHandler() {
 
+	//Controllo la connessione ed eventualmente la stabilisco
+	checkConnectionStatus();
+
+	Serial.println("Controllo se sono disponibili aggiornamenti software sulla rete locale");
+
 	if(cm.isConnectionActive()) {
 
 		//TODO: Controllare se necessario aggiornare prima di effettuare l'aggiornamento
 
-		t_httpUpdate_return ret = ESPhttpUpdate.update("http://192.168.1.18/firmware.bin");
+		t_httpUpdate_return ret = ESPhttpUpdate.update("http://192.168.1.16:8000/firmware.bin");
 
 		switch(ret) {
 			case HTTP_UPDATE_FAILED:
-				Serial.printf("HTTP_UPDATE_FAILED Error (%d): %s", ESPhttpUpdate.getLastError(), ESPhttpUpdate.getLastErrorString().c_str());
+				Serial.printf("HTTP_UPDATE_FAILED Error (%d): %s\n", ESPhttpUpdate.getLastError(), ESPhttpUpdate.getLastErrorString().c_str());
 				break;
 
 			case HTTP_UPDATE_NO_UPDATES:
