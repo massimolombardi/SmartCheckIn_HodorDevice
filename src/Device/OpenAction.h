@@ -18,7 +18,18 @@ class OpenAction {
     private:
 
     public:
+
+        /**
+         * Costruttore di default
+         */ 
         OpenAction();
+
+        /**
+         * Metodo per comandare l'apertura
+         * 
+         * @param pin Pin da utilizzare per il comando
+         * @param delay_ms Durata del comando
+         */         
         void open(int pin, unsigned int delay_ms);
 
 };

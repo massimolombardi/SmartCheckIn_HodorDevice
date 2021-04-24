@@ -46,10 +46,38 @@ class APIHandler {
 
 	public:
 
+		/**
+		* Costruttore di default
+		*
+		* @param configuration Puntatore all'oggetto configurazione
+		*/  
 		APIHandler(Configuration* configuration);
+
+		/**
+		* Metodo per la procedura di login sul server delle API per ottenere un JWT
+		*/  
 		void login();
+
+		/**
+		* Metodo per la pubblicazione dello stato
+		*
+		* @param operative Stato del device
+		* @param errorInfo Messaggio di errore
+		*/  
 		void status(bool operative, String errorInfo);
+
+		/**
+		* CMetodo per il controllo dell'apertura necessaria
+		*
+		* @return bool apertura necessaria
+		*/  
 		bool checkOpen();
+
+		/**
+		* Metodo per l'invio conferma apertura
+		*
+		* @return bool apertura confermata
+		*/  
 		bool openConfirmation();
 
 };

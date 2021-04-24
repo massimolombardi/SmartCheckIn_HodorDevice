@@ -30,10 +30,40 @@ class DeviceStatus {
     
     
     public:
+
+            /**
+         * Costruttore di default
+         * 
+         * @param swVersion Numero di versione del firmware installata
+         */ 
         DeviceStatus(String swVersion);
+
+        /**
+         * Getter per recuperare lo stato device
+         * 
+         * @return lo stato del device
+         */ 
         bool getOperative();
+
+        /**
+         * Getter per recuperare la versione firmware
+         * 
+         * @return la versione firmware
+         */ 
         String getSoftwareVersion();
+
+        /**
+         * Getter per recuperare lo stato di errore
+         * 
+         * @return lo stato di errore
+         */ 
         String getErrorInfo();
+
+        /**
+         * Getter per recuperare l'identificativo device
+         * 
+         * @return l'identificativo device
+         */ 
         String getDeviceID();
 
 };

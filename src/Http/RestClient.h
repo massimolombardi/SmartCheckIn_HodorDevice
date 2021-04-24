@@ -21,6 +21,9 @@
 #define MAX_JSON_BUFFER 2048
 
 
+/**
+* Classe per la gestione delle chiamate HTTP di tipo REST
+*/
 class RestClient {
 
 	private:
@@ -70,15 +73,52 @@ class RestClient {
 
 		WiFiClientSecure httpsClient;
 
+		/**
+		* Gestione della connessione SSL al server
+		*/
 		bool connect();
+		
+		/**
+		* Parsing dello status code di risposta
+		*/		
 		int getStatusCode();
+		
+		/**
+		* Funzioen per il parsing del body della response
+		*
+		* @param doc Documento JSON per il salvataggio del messaggio
+		*/		
 		bool parseJsonPayload(DynamicJsonDocument* doc);
 
-	public:
-		RestClient(String hostUrl, String port);
-		int GET(String resource, String authToken, DynamicJsonDocument* response);
-		int POST(String resource, String payload, String authToken, DynamicJsonDocument* response);
 
+	public:
+
+		/**
+		* Costruttore di default
+		*
+		* @param hostUrl Nome host del server
+		* @param port Porta su cui sono esposti i servizi
+		*/
+		RestClient(String hostUrl, String port);
+
+		/**
+		* Chiamata di tipo GET
+		*
+		* @param resource Risorsa da invocare
+		* @param authToken Token di autenticazione
+		* @param response Documento JSON da utilizzare per gestire la risposta
+		*/
+		int GET(String resource, String authToken, DynamicJsonDocument* response);
+
+		/**
+		* Chiamata di tipo POST
+		*
+		* @param resource Risorsa da invocare
+		* @param authToken Token di autenticazione
+		* @param payload Payload del messaggio da inviare
+		* @param response Documento JSON da utilizzare per gestire la risposta
+		*/
+		int POST(String resource, String payload, String authToken, DynamicJsonDocument* response);
 
 };
 

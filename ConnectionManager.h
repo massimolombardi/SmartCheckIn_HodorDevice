@@ -46,6 +46,9 @@ enum WIFI_CONNECTION_STATUS {
 };
 
 
+/**
+ * Classe per la gestione della connessione
+ */ 
 class ConnectionManager {
 
   private:
@@ -66,13 +69,38 @@ class ConnectionManager {
 
 
   public:
+    /**
+    * Costruttore di default
+    *
+    * @param configuration Puntatore all'oggetto configuration
+    */ 
     ConnectionManager(Configuration* configuration);
-    
-    void startConfigAP();    
+
+    /**
+    * Metodo per l'avvio dell'AP di configurazione
+    */     
+    void startConfigAP(); 
+
+    /**
+    * Metodo per stabilire la connessione
+    * 
+    * @return WIFI_CONNECTION_STATUS Stato della connessione
+    */ 
     WIFI_CONNECTION_STATUS MakeConnection();
     
+    /**
+    * Metodo per la disconnessione
+    */  
     void disconnect();   
+
+    /**
+    * Metodo per la verifica dello stato connessione
+    */  
     bool isConnectionActive(); 
+
+    /**
+    * Metodo per la stampa dello stato connessione
+    */  
     void dumpConnectionStatus();
   
 };
