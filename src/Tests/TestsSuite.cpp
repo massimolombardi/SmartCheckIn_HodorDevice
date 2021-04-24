@@ -52,7 +52,7 @@ void TestsSuite::startTesting() {
 
             unsigned long testCounter = 0;
 
-            while(true) {
+            while(continuousTesting) {
                 Serial.println("Ciclo di test numero " + String(testCounter) + ", trascorsi " + String(testCounter * TEST_CICLE_PERIODICITY_MS) + " ms");
                 testCounter++;
                 testInstallation();
