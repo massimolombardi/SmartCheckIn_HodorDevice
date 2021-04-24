@@ -26,7 +26,7 @@
 #include "src/Device/DeviceStatus.h"
 #include "src/FileSystem/FileHandler.h"
 
-#define FIRMWARE_VERSION "0.0.8"
+#define FIRMWARE_VERSION "1.0.8"
 
 //Pin GPIO per il comando al relay
 #define OPEN_ACTION_PIN 2
