@@ -20,7 +20,7 @@ DeviceStatus::DeviceStatus(String swVersion) {
     deviceID = String(ESP_getChipId(), HEX);
     softwareVersionNumber = swVersion;
     operative = true;
-    errorInfo = "running";
+    errorInfo = "Running";
 }
 
 

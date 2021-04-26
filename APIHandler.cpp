@@ -9,6 +9,7 @@
  *   --------- -----------  ---------- -----------
  *   1.0       M. Lombardi  05/01/2021 Creazione
  *   1.1	   M. Lombardi  16/01/2021 Introdotta gestione chiamata rest di login
+ *   1.2 	   M. Lombardi  26/04/2021 Gestione API status corretta
  * 
  */
 
@@ -53,11 +54,11 @@ void APIHandler::login() {
 }
 
 
-void APIHandler::status(bool operative, String errorInfo) {
+void APIHandler::status(bool operative, String errorCode, String firmwareVersion) {
 
 	if(activeSession) {
 		
-		String content = String("{ \"operative\": ") + (operative ? String("true") : String("false")) + String(", \"softwareVersionNumber\": \"0.4\", \"errorInfo\": \"") + errorInfo + String("\" }");
+		String content = String("{ \"operative\": ") + (operative ? String("true") : String("false")) + String(", \"softwareVersionNumber\": \"" + firmwareVersion + "\", \"errorCode\": \"") + errorCode + "\", \"deviceID\": \"" + cfg->getDeviceID() + String("\" }");
 
 		DynamicJsonDocument doc(MAX_JSON_BUFFER);
 		int httpStatus = restClient->POST(STATUS_RESOUCE, content, authToken, &doc);

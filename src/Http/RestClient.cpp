@@ -139,6 +139,11 @@ int RestClient::getStatusCode() {
 	char buffer[32];
 	char* p = buffer;
 	statusCodeLine.toCharArray(buffer, sizeof(buffer));
+	
+	Serial.println("Decodifica dello status code: " + statusCodeLine);
+
+	if(statusCodeLine == NULL || statusCodeLine == "")
+		return 444;
 
 	while((tmpString = strtok_r(p, " ", &p)) != NULL) {
 		statusCode = atoi(tmpString);

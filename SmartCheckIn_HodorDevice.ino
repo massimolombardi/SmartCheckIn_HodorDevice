@@ -13,6 +13,7 @@
  *   1.3	   M. Lombardi  16/01/2021 Introdotta gestione parametri configurazione aggiuntivi
  *   1.4 	   M. Lombardi  20/04/2021 Introdotti alcuni miglioramenti alla gestione chiamate API
  * 									   Configurati GPIO previsti da progetto
+ *   1.5 	   M. Lombardi  26/04/2021 Gestione API status corretta
  */
 
 #include <TaskScheduler.h>
@@ -26,7 +27,7 @@
 #include "src/Device/DeviceStatus.h"
 #include "src/FileSystem/FileHandler.h"
 
-#define FIRMWARE_VERSION "1.0.8"
+#define FIRMWARE_VERSION "1.0.9"
 
 //Pin GPIO per il comando al relay
 #define OPEN_ACTION_PIN 2
@@ -272,7 +273,7 @@ void printStatus() {
 */
 void sendStatusHandler() {
 	if(cm.isConnectionActive()) {
-		apiHandler.status(deviceStatus.getOperative(), deviceStatus.getErrorInfo());
+		apiHandler.status(deviceStatus.getOperative(), deviceStatus.getErrorInfo(), FIRMWARE_VERSION);
 	}
 }
 

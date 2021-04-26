@@ -1,16 +1,15 @@
-#ifndef APIHANDLER_H
-#define APIHANDLER_H
 /**
  * @author: Massimo Lombardi
  * @since: 05/01/2021
  * @project: Smart Check-In: Hodor
  * 
- * @brief: Classe per la gestione delle API di gestione device esposte dal server
+ * @brief: Implementazione della classe per la gestione delle API di gestione device esposte dal server
  * 
  *   Versione   Autore      Data       Commenti
  *   --------- -----------  ---------- -----------
  *   1.0       M. Lombardi  05/01/2021 Creazione
  *   1.1	   M. Lombardi  16/01/2021 Introdotta gestione chiamata rest di login
+ *   1.2 	   M. Lombardi  26/04/2021 Gestione API status corretta
  * 
  */
 
@@ -64,7 +63,7 @@ class APIHandler {
 		* @param operative Stato del device
 		* @param errorInfo Messaggio di errore
 		*/  
-		void status(bool operative, String errorInfo);
+		void status(bool operative, String errorCode, String firmwareVersion);
 
 		/**
 		* CMetodo per il controllo dell'apertura necessaria
