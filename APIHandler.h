@@ -1,3 +1,5 @@
+#ifndef APIHANDLER_H
+#define APIHANDLER_H
 /**
  * @author: Massimo Lombardi
  * @since: 05/01/2021
