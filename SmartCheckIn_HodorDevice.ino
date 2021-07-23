@@ -130,6 +130,12 @@ void setup() {
 	//Inizializzazione del pin di apertura
 	pinMode(OPEN_ACTION_PIN, OUTPUT); 
 
+  //Controllo se è richiesto di entrare nella modalità di test
+  if(digitalRead(ACTION_BUTTON_PIN) == LOW) {
+    TestsSuite ts = TestsSuite(CONFIGURATION_LED, OPEN_ACTION_PIN, ACTION_BUTTON_PIN);
+    ts.startTesting();
+  }
+
 	//Caricamento della configurazione. In caso di errore faccio partire l'AP ricorsivamente
 	while(!cfg.initialize()) 
 		cm.startConfigAP();
@@ -147,12 +153,6 @@ void setup() {
 	checkConnectionStatusTask.enable();
 	checkOpenTask.enable();
 	sendStatusTask.enable();
-
-	//Controllo se è richiesto di entrare nella modalità di test
-	if(digitalRead(ACTION_BUTTON_PIN) == LOW) {
-		TestsSuite ts = TestsSuite(CONFIGURATION_LED, OPEN_ACTION_PIN, ACTION_BUTTON_PIN);
-		ts.startTesting();
-	}
 
 	//Controllo se è necessario effettuare un aggiornamento del firmware dal server locale
 	firmwareUpdateHandler();
