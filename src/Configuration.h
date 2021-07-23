@@ -32,7 +32,7 @@
 class Configuration {
 
     private:
-        String APIHost = "lombardihome.duckdns.org";
+        String APIHost = "open.smartcheckin.cloud";
         String APIPort = "8443";
         WiFiCredential wifiCredential;
         LoginCredential loginCredential;
